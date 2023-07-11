@@ -1,0 +1,45 @@
+import hashlib
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+
+def calculate_md5_hash(data):
+    md5_hash = hashlib.md5()
+    md5_hash.update(data.encode('utf-8'))
+    return md5_hash.hexdigest()
+
+def encrypt_md5_aes(data, key):
+    iv = get_random_bytes(16)  # 16-byte initialization vector
+    md5_hash = calculate_md5_hash(data)
+    
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    encrypted_data = cipher.encrypt(data.encode('utf-8'))
+    encrypted_md5_hash = cipher.encrypt(md5_hash.encode('utf-8'))
+    
+    return encrypted_data, encrypted_md5_hash
+
+def decrypt_md5_aes(encrypted_data, key):
+    iv = get_random_bytes(16)  # 16-byte initialization vector
+    
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    decrypted_data = cipher.decrypt(encrypted_data).decode('utf-8')
+    decrypted_md5_hash = cipher.decrypt(encrypted_md5_hash).decode('utf-8')
+    
+    calculated_md5_hash = calculate_md5_hash(decrypted_data)
+    
+    if decrypted_md5_hash == calculated_md5_hash:
+        return decrypted_data
+    else:
+        return "Data integrity compromised. The data may have been tampered with."
+
+# Example usage
+data = "Sensitive information"
+encryption_key = b'ThisIsA16ByteKey'  # 16-byte (128-bit) key for AES-128
+
+# Encrypt data using MD5 with AES
+encrypted_data, encrypted_md5_hash = encrypt_md5_aes(data, encryption_key)
+print("Encrypted data:", encrypted_data)
+print("Encrypted MD5 hash:", encrypted_md5_hash)
+
+# Decrypt data using MD5 with AES
+decrypted_data = decrypt_md5_aes(encrypted_data, encrypted_md5_hash, encryption_key)
+print("Decrypted data:", decrypted_data)
